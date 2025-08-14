@@ -218,6 +218,7 @@ class ChatMessageItem extends ChatRenderItem {
   String? get content => message.content;
   List<ToolCall>? get toolCalls => message.toolCalls;
   String? get toolCallId => message.toolCallId;
+  String? get toolCallName => message.toolCallName;
   bool get isStreaming => false;
 }
 
