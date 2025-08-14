@@ -86,3 +86,9 @@ class CalculatorTool extends FunctionTool {
   }
 }
 ```
+
+## 图片示例：
+
+![home](/Users/locter/Projects/FlutterApp/tiny_ai/example/assets/home.jpg)
+
+![chat](/Users/locter/Projects/FlutterApp/tiny_ai/example/assets/chat.jpg)
