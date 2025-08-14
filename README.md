@@ -1,4 +1,4 @@
-# TinyUpgreade
+# TinyAI
 
 这是一个超级轻量级的 AI 聊天插件，你只需要用简单的方式进行配制后即可通过 OpenAI 的标准进行 AI 聊天，支持流式对话、支持 FunctionCall。
 
