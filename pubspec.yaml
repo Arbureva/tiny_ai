@@ -1,7 +1,7 @@
 name: tiny_ai
 description: "Amazing and Tiny Ai Chat Plugin"
 version: 1.0.0
-homepage:
+homepage: https://github.com/Arbureva/tiny_ai
 
 environment:
   sdk: ^3.8.1
