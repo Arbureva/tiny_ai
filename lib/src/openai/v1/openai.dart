@@ -197,9 +197,18 @@ class OpenAIClient extends AIClient {
         final arguments = jsonDecode(toolCall.function.arguments);
         final result = await tool.handler(arguments);
 
-        results.add(ChatMessage(role: MessageRole.tool, content: result, toolCallId: toolCall.id));
+        results.add(
+          ChatMessage(role: MessageRole.tool, content: result, toolCallId: toolCall.id, toolCallName: toolCall.function.name),
+        );
       } catch (e) {
-        results.add(ChatMessage(role: MessageRole.tool, content: 'Error executing tool: $e', toolCallId: toolCall.id));
+        results.add(
+          ChatMessage(
+            role: MessageRole.tool,
+            content: 'Error executing tool: $e',
+            toolCallId: toolCall.id,
+            toolCallName: toolCall.function.name,
+          ),
+        );
       }
     }
 

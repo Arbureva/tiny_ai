@@ -5,10 +5,11 @@ class ChatMessage {
   String? content;
   final String? name;
   final String? toolCallId;
+  final String? toolCallName;
   final List<ToolCall>? toolCalls;
   final Map<String, dynamic>? metadata;
 
-  ChatMessage({required this.role, this.content, this.name, this.toolCallId, this.toolCalls, this.metadata});
+  ChatMessage({required this.role, this.content, this.name, this.toolCallId, this.toolCallName, this.toolCalls, this.metadata});
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{'role': role.name};
@@ -16,9 +17,8 @@ class ChatMessage {
     if (content != null) json['content'] = content;
     if (name != null) json['name'] = name;
     if (toolCallId != null) json['tool_call_id'] = toolCallId;
-    if (toolCalls != null) {
-      json['tool_calls'] = toolCalls!.map((tc) => tc.toJson()).toList();
-    }
+    if (toolCalls != null) json['tool_calls'] = toolCalls!.map((tc) => tc.toJson()).toList();
+    if (toolCallName != null) json['tool_call_name'] = toolCallName;
 
     return json;
   }
