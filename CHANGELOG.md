@@ -1,3 +1,7 @@
+## 1.0.3
+
+- FunctionTool 增加 title, with_property 属性
+
 ## 1.0.2
 
 - 修复 ToolCall 转换到 ChatMessageItem 后的遗漏问题

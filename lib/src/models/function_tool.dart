@@ -6,6 +6,9 @@ abstract class FunctionTool {
   String get description;
   Map<String, dynamic> get parameters;
 
+  String? title;
+  Map<String, dynamic> withProprty = {};
+
   /// 工具处理器 - 子类必须实现
   Future<String> handler(Map<String, dynamic> arguments);
 
@@ -49,4 +52,7 @@ class WeatherTool extends FunctionTool {
 
     return jsonEncode({'city': city, 'temperature': unit == 'celsius' ? 22 : 72, 'unit': unit, 'description': '晴天'});
   }
+
+  @override
+  String get title => "查询天气";
 }

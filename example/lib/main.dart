@@ -458,6 +458,9 @@ class _ChatDemoPageState extends State<ChatDemoPage> {
 // 添加一个简单的计算器工具示例
 class CalculatorTool extends FunctionTool {
   @override
+  String get title => '使用计算器';
+
+  @override
   String get name => 'calculate';
 
   @override
