@@ -1,3 +1,7 @@
+## 1.0.4
+
+- 只要是在流式输出，就会加入一个空消息，可以结合 stream 和空内容展示加载状态。
+
 ## 1.0.3
 
 - FunctionTool 增加 title, with_property 属性

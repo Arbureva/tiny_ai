@@ -47,8 +47,8 @@ class ChatManager extends ChangeNotifier {
   List<ChatRenderItem> get renderItems {
     final items = _messages.map((msg) => ChatRenderItem.message(msg)).toList();
 
-    // 如果正在流式输出且内容不为空，添加一个临时的流式消息项
-    if (_isStreaming && _streamingContent.isNotEmpty) {
+    // 如果正在流式输出，添加一个临时的流式消息项
+    if (_isStreaming) {
       items.add(ChatRenderItem.streaming(_streamingContent));
     }
 
