@@ -364,7 +364,7 @@ class _ChatDemoPageState extends State<ChatDemoPage> {
 
   Widget _buildMessageBubble(ChatMessage message) {
     final isUser = message.role == MessageRole.user;
-    final isAssistant = message.role == MessageRole.assistant;
+    // final isAssistant = message.role == MessageRole.assistant;
     final isTool = message.role == MessageRole.tool;
 
     return Padding(

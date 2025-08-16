@@ -9,6 +9,7 @@ abstract class AIClient {
   Future<AIResponse> chatWithTools(List<ChatMessage> messages, {List<FunctionTool>? tools, Map<String, dynamic>? options});
   Stream<ChatEvent> chatStream(List<ChatMessage> messages, {List<FunctionTool>? tools, Map<String, dynamic>? options});
   Future<List<ChatMessage>> executeFunctionCalls(List<ToolCall> toolCalls, List<FunctionTool> availableTools);
+  Future<String> generateTitle(List<ChatMessage> messages, {required String model, int maxLength = 20});
 }
 
 /// ChatManager

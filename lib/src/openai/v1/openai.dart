@@ -214,6 +214,86 @@ class OpenAIClient extends AIClient {
 
     return results;
   }
+
+  /// 根据对话内容生成标题
+  @override
+  Future<String> generateTitle(List<ChatMessage> messages, {required String model, int maxLength = 20}) async {
+    // 构造用于生成标题的 prompt
+    final titlePrompt = _buildTitlePrompt(messages, maxLength);
+
+    final titleMessages = [ChatMessage(role: MessageRole.user, content: titlePrompt)];
+
+    try {
+      final response = await chat(
+        titleMessages,
+        options: {
+          'model': model,
+          'temperature': 0.3, // 较低的温度保证结果稳定
+          'max_tokens': maxLength, // 限制标题长度
+        },
+      );
+
+      return response.content.trim();
+    } catch (e) {
+      // 如果生成失败，返回默认标题
+      return _generateFallbackTitle(messages);
+    }
+  }
+
+  /// 构建标题生成的 prompt
+  String _buildTitlePrompt(List<ChatMessage> messages, int maxLength) {
+    // 获取前几条消息作为上下文
+    final contextMessages = messages
+        .take(3)
+        .where((msg) => msg.role == MessageRole.user || msg.role == MessageRole.assistant)
+        .toList();
+
+    if (contextMessages.isEmpty) {
+      throw ArgumentError('No context messages found');
+    }
+
+    final context = contextMessages.map((msg) => '${msg.role.name}: ${msg.content}').join('\n');
+
+    return '为这个对话生成一个中文标题, 长度和对话信息 (max $maxLength characters):\n\n$context\n\nTitle:';
+  }
+
+  /// 生成备用标题（当 AI 生成失败时）
+  String _generateFallbackTitle(List<ChatMessage> messages) {
+    final userMessages = messages.where((msg) => msg.role == MessageRole.user).toList();
+
+    if (userMessages.isEmpty) {
+      return 'New Conversation';
+    }
+
+    // 取第一条用户消息的前50个字符作为标题
+    final firstMessage = userMessages.first.content;
+    if (firstMessage == null) return '新对话';
+
+    if (firstMessage.length <= 50) {
+      return firstMessage;
+    }
+
+    return '${firstMessage.substring(0, 47)}...';
+  }
+
+  /// 智能标题生成（根据对话长度和内容智能选择策略）
+  Future<String> generateSmartTitle(List<ChatMessage> messages, String model) async {
+    if (messages.isEmpty) {
+      return '新对话';
+    }
+
+    // 如果对话很短，直接使用第一条用户消息
+    final userMessages = messages.where((msg) => msg.role == MessageRole.user).toList();
+    if (userMessages.length == 1) {
+      final content = userMessages.first.content;
+      if (content == null) return "新对话";
+
+      return content.length > 50 ? '${content.substring(0, 47)}...' : content;
+    }
+
+    // 如果对话较长，使用 AI 生成标题
+    return await generateTitle(messages, model: model);
+  }
 }
 
 // OpenAI特定的扩展方法（可选）
