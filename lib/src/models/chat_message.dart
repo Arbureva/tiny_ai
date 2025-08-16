@@ -1,7 +1,11 @@
 enum MessageRole { system, user, assistant, tool }
 
+enum MessageStatus { normal, info, warning, error }
+
 class ChatMessage {
   final MessageRole role;
+  final MessageStatus status;
+
   String? content;
   final String? name;
   final String? toolCallId;
@@ -9,7 +13,16 @@ class ChatMessage {
   final List<ToolCall>? toolCalls;
   final Map<String, dynamic>? metadata;
 
-  ChatMessage({required this.role, this.content, this.name, this.toolCallId, this.toolCallName, this.toolCalls, this.metadata});
+  ChatMessage({
+    required this.role,
+    this.content,
+    this.name,
+    this.toolCallId,
+    this.toolCallName,
+    this.toolCalls,
+    this.metadata,
+    this.status = MessageStatus.normal,
+  });
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{'role': role.name};
@@ -19,6 +32,8 @@ class ChatMessage {
     if (toolCallId != null) json['tool_call_id'] = toolCallId;
     if (toolCalls != null) json['tool_calls'] = toolCalls!.map((tc) => tc.toJson()).toList();
     if (toolCallName != null) json['tool_call_name'] = toolCallName;
+    if (metadata != null) json['metadata'] = metadata;
+    if (status != MessageStatus.normal) json['status'] = status.name;
 
     return json;
   }
@@ -26,10 +41,13 @@ class ChatMessage {
   factory ChatMessage.fromJson(Map<String, dynamic> json) {
     return ChatMessage(
       role: MessageRole.values.firstWhere((e) => e.name == json['role'], orElse: () => MessageRole.user),
+      status: MessageStatus.values.firstWhere((e) => e.name == json['status'], orElse: () => MessageStatus.normal),
       content: json['content'],
       name: json['name'],
       toolCallId: json['tool_call_id'],
+      toolCallName: json['tool_call_name'],
       toolCalls: json['tool_calls']?.map<ToolCall>((tc) => ToolCall.fromJson(tc)).toList(),
+      metadata: json['metadata'],
     );
   }
 }

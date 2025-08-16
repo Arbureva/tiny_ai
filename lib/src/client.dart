@@ -24,6 +24,9 @@ class ChatManager extends ChangeNotifier {
   String _streamingContent = '';
   bool _isStreaming = false;
 
+  // 用于管理异步操作的取消
+  CancelToken? _currentOperation;
+
   ChatManager(this._client);
 
   // --- 公共状态访问器 ---
@@ -70,6 +73,20 @@ class ChatManager extends ChangeNotifier {
     notifyListeners(); // 通知 UI 更新
   }
 
+  void importMessages(List<ChatMessage> messages) {
+    // 取消当前正在执行的操作
+    _currentOperation?.cancel();
+
+    // 重置流式状态
+    _isStreaming = false;
+    _streamingContent = '';
+
+    // 清空并导入新消息
+    _messages.clear();
+    _messages.addAll(messages);
+    notifyListeners(); // 通知 UI 更新
+  }
+
   void addSystemMessage(String content) {
     addMessage(ChatMessage(role: MessageRole.system, content: content));
   }
@@ -82,28 +99,66 @@ class ChatManager extends ChangeNotifier {
 
   /// 标准多轮对话（非流式，但支持 Function Call）
   Future<void> sendMessage(String content, {Map<String, dynamic>? options}) async {
-    addUserMessage(content);
+    // 创建新的取消令牌
+    final cancelToken = CancelToken();
+    _currentOperation = cancelToken;
 
-    final response = await _client.chatWithTools(_messages, tools: _tools.isNotEmpty ? _tools : null, options: options);
+    try {
+      addUserMessage(content);
 
-    // 添加助手的第一轮回复（可能包含工具调用请求）
-    addMessage(ChatMessage(role: MessageRole.assistant, content: response.content, toolCalls: response.toolCalls));
+      // 检查是否已被取消
+      if (cancelToken.isCancelled) return;
 
-    // 如果有工具调用，则执行它们并获取最终回复
-    if (response.hasToolCalls) {
-      // 1. 执行工具调用
-      final toolResults = await _client.executeFunctionCalls(response.toolCalls!, _tools);
-      _messages.addAll(toolResults); // 将工具调用的结果也添加到历史记录中
-      notifyListeners();
+      final response = await _client.chatWithTools(_messages, tools: _tools.isNotEmpty ? _tools : null, options: options);
 
-      // 2. 携带工具调用结果，再次请求 AI 获取最终回复
-      final finalResponse = await _client.chat(_messages, options: options);
-      addMessage(ChatMessage(role: MessageRole.assistant, content: finalResponse.content));
+      // 检查是否已被取消
+      if (cancelToken.isCancelled) return;
+
+      // 添加助手的第一轮回复（可能包含工具调用请求）
+      addMessage(ChatMessage(role: MessageRole.assistant, content: response.content, toolCalls: response.toolCalls));
+
+      // 如果有工具调用，则执行它们并获取最终回复
+      if (response.hasToolCalls) {
+        // 检查是否已被取消
+        if (cancelToken.isCancelled) return;
+
+        // 1. 执行工具调用
+        final toolResults = await _client.executeFunctionCalls(response.toolCalls!, _tools);
+
+        // 检查是否已被取消
+        if (cancelToken.isCancelled) return;
+
+        _messages.addAll(toolResults); // 将工具调用的结果也添加到历史记录中
+        notifyListeners();
+
+        // 2. 携带工具调用结果，再次请求 AI 获取最终回复
+        final finalResponse = await _client.chat(_messages, options: options);
+
+        // 检查是否已被取消
+        if (cancelToken.isCancelled) return;
+
+        addMessage(ChatMessage(role: MessageRole.assistant, content: finalResponse.content));
+      }
+    } catch (e) {
+      if (!cancelToken.isCancelled) {
+        log("Error during sendMessage: $e");
+        rethrow;
+      }
+      // 如果是因为取消而产生的异常，则静默处理
+    } finally {
+      // 清理当前操作引用（如果是当前操作）
+      if (_currentOperation == cancelToken) {
+        _currentOperation = null;
+      }
     }
   }
 
   /// 流式多轮对话（支持 Function Call）
   Stream<String> sendMessageStream(String content, {Map<String, dynamic>? options}) async* {
+    // 创建新的取消令牌
+    final cancelToken = CancelToken();
+    _currentOperation = cancelToken;
+
     addUserMessage(content);
 
     _isStreaming = true;
@@ -113,35 +168,47 @@ class ChatManager extends ChangeNotifier {
     final textBuffer = StringBuffer();
     try {
       // 核心处理逻辑：处理来自客户端的事件流
-      final contentStream = _processStream(textBuffer, options: options);
+      final contentStream = _processStream(textBuffer, cancelToken, options: options);
 
       await for (final chunk in contentStream) {
+        if (cancelToken.isCancelled) break;
         yield chunk; // 将内容块向上层（UI）传递
       }
 
       // 流式传输结束后，将最终的完整消息添加到历史记录
       // 如果 textBuffer 为空（例如，如果 AI 只进行了工具调用而没有返回文本），则不添加空消息
-      if (textBuffer.isNotEmpty) {
+      if (textBuffer.isNotEmpty && !cancelToken.isCancelled) {
         _messages.add(ChatMessage(role: MessageRole.assistant, content: textBuffer.toString()));
       }
     } catch (e) {
-      log("Error during chat stream: $e");
-      // 可以在这里添加一条错误消息到聊天记录中
-      addMessage(ChatMessage(role: MessageRole.system, content: 'An error occurred: $e'));
-      rethrow; // 重新抛出异常，让 UI 层也能捕获
+      if (!cancelToken.isCancelled) {
+        log("Error during chat stream: $e");
+        // 可以在这里添加一条错误消息到聊天记录中
+        addMessage(ChatMessage(role: MessageRole.system, status: MessageStatus.error, content: '服务器繁忙，请稍后再试。'));
+        rethrow; // 重新抛出异常，让 UI 层也能捕获
+      }
     } finally {
       // 清理流式状态
       _isStreaming = false;
       _streamingContent = '';
+
+      // 清理当前操作引用（如果是当前操作）
+      if (_currentOperation == cancelToken) {
+        _currentOperation = null;
+      }
+
       notifyListeners(); // 通知 UI 流式状态结束
     }
   }
 
   /// 私有方法：处理来自 AIClient 的流事件（包括内容和工具调用）
-  Stream<String> _processStream(StringBuffer textBuffer, {Map<String, dynamic>? options}) async* {
+  Stream<String> _processStream(StringBuffer textBuffer, CancelToken cancelToken, {Map<String, dynamic>? options}) async* {
     final clientStream = _client.chatStream(_messages, tools: _tools.isNotEmpty ? _tools : null, options: options);
 
     await for (final event in clientStream) {
+      // 检查是否已被取消
+      if (cancelToken.isCancelled) break;
+
       if (event.type == ChatEventType.content) {
         // --- 处理普通文本内容 ---
         final text = event.text ?? '';
@@ -153,17 +220,24 @@ class ChatManager extends ChangeNotifier {
         yield text; // 将文本块产出给上层
       } else if (event.type == ChatEventType.toolCalls) {
         // --- 处理工具调用 ---
+        // 检查是否已被取消
+        if (cancelToken.isCancelled) break;
+
         // 1. 将助手的工具调用请求添加到历史记录
         _messages.add(ChatMessage(role: MessageRole.assistant, toolCalls: event.toolCalls));
 
         // 2. 执行工具调用
         final toolResults = await _client.executeFunctionCalls(event.toolCalls!, _tools);
+
+        // 检查是否已被取消
+        if (cancelToken.isCancelled) break;
+
         _messages.addAll(toolResults); // 将结果添加到历史记录
         notifyListeners(); // 通知 UI 显示工具调用及其结果
 
         // 3. 递归调用自身，以获取工具执行后的最终 AI 回复，并将其流式输出
         // 【结构改进】使用 yield* 将后续的流无缝合并到当前流中
-        yield* _processStream(textBuffer, options: options);
+        yield* _processStream(textBuffer, cancelToken, options: options);
       }
     }
   }
@@ -175,6 +249,24 @@ class ChatManager extends ChangeNotifier {
 
   void clearTools() {
     _tools.clear();
+  }
+
+  @override
+  void dispose() {
+    // 取消任何正在进行的操作
+    _currentOperation?.cancel();
+    super.dispose();
+  }
+}
+
+/// 简单的取消令牌实现
+class CancelToken {
+  bool _isCancelled = false;
+
+  bool get isCancelled => _isCancelled;
+
+  void cancel() {
+    _isCancelled = true;
   }
 }
 

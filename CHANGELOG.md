@@ -1,3 +1,9 @@
+## 1.0.5
+
+- 添加更详细的 Json 导出字段
+- ChatManager 添加 importMessage 方法
+- ChatMessage 添加 status 字段用来判断消息状态
+
 ## 1.0.4
 
 - 只要是在流式输出，就会加入一个空消息，可以结合 stream 和空内容展示加载状态。
