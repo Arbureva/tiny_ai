@@ -35,7 +35,7 @@ class OpenAIClient extends AIClient {
       headers: {'Authorization': 'Bearer $_apiKey', 'Content-Type': 'application/json'},
     );
 
-    final completion = ChatCompletion.fromJson(response['data']);
+    final completion = ChatCompletion.fromJson(response);
     final choice = completion.choices.first;
 
     return AIResponse(
