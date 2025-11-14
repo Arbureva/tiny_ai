@@ -65,7 +65,7 @@ class OpenAIClient extends AIClient {
       headers: {'Authorization': 'Bearer $_apiKey', 'Content-Type': 'application/json'},
     );
 
-    final completion = ChatCompletion.fromJson(response['data']);
+    final completion = ChatCompletion.fromJson(response);
     final choice = completion.choices.first;
 
     return AIResponse(
@@ -181,6 +181,7 @@ class OpenAIClient extends AIClient {
     }
   }
 
+  // FIXME: 改成异步多线程调用可能会更快一些？
   @override
   Future<List<ChatMessage>> executeFunctionCalls(List<ToolCall> toolCalls, List<FunctionTool> availableTools) async {
     final results = <ChatMessage>[];
