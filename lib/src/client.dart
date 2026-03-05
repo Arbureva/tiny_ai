@@ -119,7 +119,12 @@ class ChatManager extends ChangeNotifier {
   // --- 核心交互 API ---
 
   /// 标准多轮对话（非流式，但支持 Function Call）
-  Future<void> sendMessage(String content, {Map<String, dynamic>? options, void Function(Map<String, dynamic>)? onHeader}) async {
+  Future<void> sendMessage(
+    String content, {
+    Map<String, dynamic>? options,
+    Map<String, String> headers = const {},
+    void Function(Map<String, dynamic>)? onHeader,
+  }) async {
     // 创建新的取消令牌
     final cancelToken = CancelToken();
     _currentOperation = cancelToken;
@@ -134,6 +139,7 @@ class ChatManager extends ChangeNotifier {
         _messages,
         tools: _tools.isNotEmpty ? _tools : null,
         options: options,
+        header: headers,
         onHeader: onHeader,
       );
 
@@ -183,6 +189,7 @@ class ChatManager extends ChangeNotifier {
   Stream<String> sendMessageStream(
     String content, {
     Map<String, dynamic>? options,
+    Map<String, String> headers = const {},
     void Function(Map<String, dynamic>)? onHeader,
   }) async* {
     // 创建新的取消令牌
@@ -198,7 +205,7 @@ class ChatManager extends ChangeNotifier {
     final textBuffer = StringBuffer();
     try {
       // 核心处理逻辑：处理来自客户端的事件流
-      final contentStream = _processStream(textBuffer, cancelToken, options: options, onHeader: onHeader);
+      final contentStream = _processStream(textBuffer, cancelToken, options: options, headers: headers, onHeader: onHeader);
 
       await for (final chunk in contentStream) {
         if (cancelToken.isCancelled) break;
@@ -236,12 +243,14 @@ class ChatManager extends ChangeNotifier {
     StringBuffer textBuffer,
     CancelToken cancelToken, {
     Map<String, dynamic>? options,
+    Map<String, String> headers = const {},
     void Function(Map<String, dynamic>)? onHeader,
   }) async* {
     final clientStream = _client.chatStream(
       _messages,
       tools: _tools.isNotEmpty ? _tools : null,
       options: options,
+      header: headers,
       onHeader: onHeader,
     );
 
