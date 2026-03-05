@@ -5,9 +5,26 @@ import 'package:flutter/foundation.dart';
 import 'models/models.dart';
 
 abstract class AIClient {
-  Future<AIResponse> chat(List<ChatMessage> messages, {Map<String, dynamic>? options});
-  Future<AIResponse> chatWithTools(List<ChatMessage> messages, {List<FunctionTool>? tools, Map<String, dynamic>? options});
-  Stream<ChatEvent> chatStream(List<ChatMessage> messages, {List<FunctionTool>? tools, Map<String, dynamic>? options});
+  Future<AIResponse> chat(
+    List<ChatMessage> messages, {
+    Map<String, dynamic>? options,
+    void Function(Map<String, dynamic>)? onHeader,
+  });
+
+  Future<AIResponse> chatWithTools(
+    List<ChatMessage> messages, {
+    List<FunctionTool>? tools,
+    Map<String, dynamic>? options,
+    void Function(Map<String, dynamic>)? onHeader,
+  });
+
+  Stream<ChatEvent> chatStream(
+    List<ChatMessage> messages, {
+    List<FunctionTool>? tools,
+    Map<String, dynamic>? options,
+    void Function(Map<String, dynamic>)? onHeader,
+  });
+
   Future<List<ChatMessage>> executeFunctionCalls(List<ToolCall> toolCalls, List<FunctionTool> availableTools);
   Future<String> generateTitle(List<ChatMessage> messages, {required String model, int maxLength = 20});
 }
@@ -99,7 +116,7 @@ class ChatManager extends ChangeNotifier {
   // --- 核心交互 API ---
 
   /// 标准多轮对话（非流式，但支持 Function Call）
-  Future<void> sendMessage(String content, {Map<String, dynamic>? options}) async {
+  Future<void> sendMessage(String content, {Map<String, dynamic>? options, void Function(Map<String, dynamic>)? onHeader}) async {
     // 创建新的取消令牌
     final cancelToken = CancelToken();
     _currentOperation = cancelToken;
@@ -110,7 +127,12 @@ class ChatManager extends ChangeNotifier {
       // 检查是否已被取消
       if (cancelToken.isCancelled) return;
 
-      final response = await _client.chatWithTools(_messages, tools: _tools.isNotEmpty ? _tools : null, options: options);
+      final response = await _client.chatWithTools(
+        _messages,
+        tools: _tools.isNotEmpty ? _tools : null,
+        options: options,
+        onHeader: onHeader,
+      );
 
       // 检查是否已被取消
       if (cancelToken.isCancelled) return;
@@ -133,7 +155,7 @@ class ChatManager extends ChangeNotifier {
         notifyListeners();
 
         // 2. 携带工具调用结果，再次请求 AI 获取最终回复
-        final finalResponse = await _client.chat(_messages, options: options);
+        final finalResponse = await _client.chat(_messages, options: options, onHeader: onHeader);
 
         // 检查是否已被取消
         if (cancelToken.isCancelled) return;
@@ -155,7 +177,11 @@ class ChatManager extends ChangeNotifier {
   }
 
   /// 流式多轮对话（支持 Function Call）
-  Stream<String> sendMessageStream(String content, {Map<String, dynamic>? options}) async* {
+  Stream<String> sendMessageStream(
+    String content, {
+    Map<String, dynamic>? options,
+    void Function(Map<String, dynamic>)? onHeader,
+  }) async* {
     // 创建新的取消令牌
     final cancelToken = CancelToken();
     _currentOperation = cancelToken;
@@ -169,7 +195,7 @@ class ChatManager extends ChangeNotifier {
     final textBuffer = StringBuffer();
     try {
       // 核心处理逻辑：处理来自客户端的事件流
-      final contentStream = _processStream(textBuffer, cancelToken, options: options);
+      final contentStream = _processStream(textBuffer, cancelToken, options: options, onHeader: onHeader);
 
       await for (final chunk in contentStream) {
         if (cancelToken.isCancelled) break;
@@ -203,8 +229,18 @@ class ChatManager extends ChangeNotifier {
   }
 
   /// 私有方法：处理来自 AIClient 的流事件（包括内容和工具调用）
-  Stream<String> _processStream(StringBuffer textBuffer, CancelToken cancelToken, {Map<String, dynamic>? options}) async* {
-    final clientStream = _client.chatStream(_messages, tools: _tools.isNotEmpty ? _tools : null, options: options);
+  Stream<String> _processStream(
+    StringBuffer textBuffer,
+    CancelToken cancelToken, {
+    Map<String, dynamic>? options,
+    void Function(Map<String, dynamic>)? onHeader,
+  }) async* {
+    final clientStream = _client.chatStream(
+      _messages,
+      tools: _tools.isNotEmpty ? _tools : null,
+      options: options,
+      onHeader: onHeader,
+    );
 
     await for (final event in clientStream) {
       // 检查是否已被取消
