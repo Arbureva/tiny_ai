@@ -1,3 +1,7 @@
+## 1.0.12
+
+- ChatManager 新增header属性，可以自由定义2
+
 ## 1.0.11
 
 - ChatManager 新增header属性，可以自由定义
