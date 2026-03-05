@@ -1,3 +1,7 @@
+## 1.0.10
+
+- 补充ChatManager的onHeader方法
+
 ## 1.0.9
 
 - 所有OpenAI的接口均增加onHeader方法，用于解析响应Header
