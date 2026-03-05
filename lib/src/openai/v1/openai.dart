@@ -14,7 +14,11 @@ class OpenAIClient extends AIClient {
   String get _model => _config.model ?? 'gpt-3.5-turbo';
 
   @override
-  Future<AIResponse> chat(List<ChatMessage> messages, {Map<String, dynamic>? options}) async {
+  Future<AIResponse> chat(
+    List<ChatMessage> messages, {
+    Map<String, dynamic>? options,
+    void Function(Map<String, String>)? onHeader,
+  }) async {
     final data = {
       'model': options?['model'] ?? _model,
       'messages': messages.map((m) => m.toJson()).toList(),
@@ -33,6 +37,7 @@ class OpenAIClient extends AIClient {
       '$_baseUrl/chat/completions',
       data: data,
       headers: {'Authorization': 'Bearer $_apiKey', 'Content-Type': 'application/json'},
+      onHeader: onHeader,
     );
 
     final completion = ChatCompletion.fromJson(response);
@@ -47,7 +52,12 @@ class OpenAIClient extends AIClient {
   }
 
   @override
-  Future<AIResponse> chatWithTools(List<ChatMessage> messages, {List<FunctionTool>? tools, Map<String, dynamic>? options}) async {
+  Future<AIResponse> chatWithTools(
+    List<ChatMessage> messages, {
+    List<FunctionTool>? tools,
+    Map<String, dynamic>? options,
+    void Function(Map<String, String>)? onHeader,
+  }) async {
     final data = {
       'model': options?['model'] ?? _model,
       'messages': messages.map((m) => m.toJson()).toList(),
@@ -63,6 +73,7 @@ class OpenAIClient extends AIClient {
       '$_baseUrl/chat/completions',
       data: data,
       headers: {'Authorization': 'Bearer $_apiKey', 'Content-Type': 'application/json'},
+      onHeader: onHeader,
     );
 
     final completion = ChatCompletion.fromJson(response);
@@ -77,7 +88,12 @@ class OpenAIClient extends AIClient {
   }
 
   @override
-  Stream<ChatEvent> chatStream(List<ChatMessage> messages, {List<FunctionTool>? tools, Map<String, dynamic>? options}) async* {
+  Stream<ChatEvent> chatStream(
+    List<ChatMessage> messages, {
+    List<FunctionTool>? tools,
+    Map<String, dynamic>? options,
+    void Function(Map<String, String>)? onHeader,
+  }) async* {
     // --- 1) 组织请求体 ---
     final req = {
       'model': options?['model'] ?? _model,
@@ -91,7 +107,7 @@ class OpenAIClient extends AIClient {
     // --- 2) 用原生 HttpClient 流式请求 ---
     final headers = {'Authorization': 'Bearer $_apiKey', 'Content-Type': 'application/json'};
 
-    final stream = HttpService.instance.postStream('$_baseUrl/chat/completions', data: req, headers: headers);
+    final stream = HttpService.instance.postStream('$_baseUrl/chat/completions', data: req, headers: headers, onHeader: onHeader);
 
     // --- 3) 累积器 ---
     final Map<int, ToolCall> toolCalls = {};
@@ -218,7 +234,12 @@ class OpenAIClient extends AIClient {
 
   /// 根据对话内容生成标题
   @override
-  Future<String> generateTitle(List<ChatMessage> messages, {required String model, int maxLength = 20}) async {
+  Future<String> generateTitle(
+    List<ChatMessage> messages, {
+    required String model,
+    int maxLength = 20,
+    void Function(Map<String, String>)? onHeader,
+  }) async {
     // 构造用于生成标题的 prompt
     final titlePrompt = _buildTitlePrompt(messages, maxLength);
 
@@ -232,6 +253,7 @@ class OpenAIClient extends AIClient {
           'temperature': 0.3, // 较低的温度保证结果稳定
           'max_tokens': maxLength, // 限制标题长度
         },
+        onHeader: onHeader,
       );
 
       return response.content.trim();

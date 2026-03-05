@@ -19,7 +19,12 @@ class HttpService {
   }
 
   /// 普通 POST（返回完整响应）- 已更新为 package:http
-  Future<Map<String, dynamic>> post(String url, {required Map<String, dynamic> data, Map<String, String>? headers}) async {
+  Future<Map<String, dynamic>> post(
+    String url, {
+    required Map<String, dynamic> data,
+    Map<String, String>? headers,
+    Function(Map<String, String>)? onHeader,
+  }) async {
     final uri = Uri.parse(url);
     final requestBody = jsonEncode(data);
 
@@ -37,6 +42,8 @@ class HttpService {
 
     try {
       final response = await http.post(uri, headers: requestHeaders, body: requestBody).timeout(_timeout); // 为请求添加超时
+
+      onHeader?.call(response.headers);
 
       // 使用 response.bodyBytes 并用 utf8解码，可以避免中文乱码问题
       final responseBody = utf8.decode(response.bodyBytes);
@@ -63,7 +70,12 @@ class HttpService {
   }
 
   /// 流式 POST（SSE）- 已更新为 package:http
-  Stream<String> postStream(String url, {required Map<String, dynamic> data, Map<String, String>? headers}) {
+  Stream<String> postStream(
+    String url, {
+    required Map<String, dynamic> data,
+    Map<String, String>? headers,
+    Function(Map<String, String>)? onHeader,
+  }) {
     final uri = Uri.parse(url);
     final requestBody = jsonEncode(data);
     final client = http.Client();
@@ -96,6 +108,7 @@ class HttpService {
           return;
         }
 
+        onHeader?.call(response.headers);
         // 流式读取 UTF8 + 按行切分 (这部分逻辑和你原来的一样)
         response.stream
             .transform(utf8.decoder)

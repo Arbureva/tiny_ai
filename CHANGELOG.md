@@ -1,3 +1,7 @@
+## 1.0.9
+
+- 所有OpenAI的接口均增加onHeader方法，用于解析响应Header
+
 ## 1.0.8
 
 - 修复 chatWithTools 方法的请求返回值解析问题
