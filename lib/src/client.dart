@@ -9,7 +9,7 @@ abstract class AIClient {
     List<ChatMessage> messages, {
     Map<String, dynamic>? options,
     Map<String, String> header = const {},
-    void Function(Map<String, dynamic>)? onHeader,
+    void Function(Map<String, String>)? onHeader,
   });
 
   Future<AIResponse> chatWithTools(
@@ -17,7 +17,7 @@ abstract class AIClient {
     List<FunctionTool>? tools,
     Map<String, dynamic>? options,
     Map<String, String> header = const {},
-    void Function(Map<String, dynamic>)? onHeader,
+    void Function(Map<String, String>)? onHeader,
   });
 
   Stream<ChatEvent> chatStream(
@@ -25,7 +25,7 @@ abstract class AIClient {
     List<FunctionTool>? tools,
     Map<String, dynamic>? options,
     Map<String, String> header = const {},
-    void Function(Map<String, dynamic>)? onHeader,
+    void Function(Map<String, String>)? onHeader,
   });
 
   Future<List<ChatMessage>> executeFunctionCalls(List<ToolCall> toolCalls, List<FunctionTool> availableTools);
@@ -123,7 +123,7 @@ class ChatManager extends ChangeNotifier {
     String content, {
     Map<String, dynamic>? options,
     Map<String, String> headers = const {},
-    void Function(Map<String, dynamic>)? onHeader,
+    void Function(Map<String, String>)? onHeader,
   }) async {
     // 创建新的取消令牌
     final cancelToken = CancelToken();
@@ -190,7 +190,7 @@ class ChatManager extends ChangeNotifier {
     String content, {
     Map<String, dynamic>? options,
     Map<String, String> headers = const {},
-    void Function(Map<String, dynamic>)? onHeader,
+    void Function(Map<String, String>)? onHeader,
   }) async* {
     // 创建新的取消令牌
     final cancelToken = CancelToken();
@@ -244,7 +244,7 @@ class ChatManager extends ChangeNotifier {
     CancelToken cancelToken, {
     Map<String, dynamic>? options,
     Map<String, String> headers = const {},
-    void Function(Map<String, dynamic>)? onHeader,
+    void Function(Map<String, String>)? onHeader,
   }) async* {
     final clientStream = _client.chatStream(
       _messages,
