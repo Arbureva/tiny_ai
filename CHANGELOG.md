@@ -1,3 +1,7 @@
+## 1.0.11
+
+- ChatManager 新增header属性，可以自由定义
+
 ## 1.0.10
 
 - 补充ChatManager的onHeader方法

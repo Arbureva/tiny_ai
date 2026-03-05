@@ -28,9 +28,9 @@ class _ChatDemoPageState extends State<ChatDemoPage> {
 
   void _initializeChat() {
     TinyAIConfig.instance
-        .setBaseUrl('https://api.openai.com/openai')
-        .setApiKey('sk-test') // 替换为实际的API密钥
-        .setModel('gpt-4')
+        .setBaseUrl('https://iceres.cn:7443/v1')
+        .setApiKey('ik_live_b173261cf36522ed7f52e1b04db7eeb9da58237d8b9453f2:sk_43caa7a7bb3d33fde2c28d9a8961242330441fed1a1c6797f05e059444b14572') // 替换为实际的API密钥
+        .setModel('deepseek-chat')
         .setLogging(true);
 
     // 创建客户端和聊天管理器

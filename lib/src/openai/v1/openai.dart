@@ -17,6 +17,7 @@ class OpenAIClient extends AIClient {
   Future<AIResponse> chat(
     List<ChatMessage> messages, {
     Map<String, dynamic>? options,
+    Map<String, String> header = const {},
     void Function(Map<String, String>)? onHeader,
   }) async {
     final data = {
@@ -36,7 +37,7 @@ class OpenAIClient extends AIClient {
     final response = await _http.post(
       '$_baseUrl/chat/completions',
       data: data,
-      headers: {'Authorization': 'Bearer $_apiKey', 'Content-Type': 'application/json'},
+      headers: {'Authorization': 'Bearer $_apiKey', 'Content-Type': 'application/json', ...header},
       onHeader: onHeader,
     );
 
@@ -56,6 +57,7 @@ class OpenAIClient extends AIClient {
     List<ChatMessage> messages, {
     List<FunctionTool>? tools,
     Map<String, dynamic>? options,
+    Map<String, String> header = const {},
     void Function(Map<String, String>)? onHeader,
   }) async {
     final data = {
@@ -72,7 +74,7 @@ class OpenAIClient extends AIClient {
     final response = await _http.post(
       '$_baseUrl/chat/completions',
       data: data,
-      headers: {'Authorization': 'Bearer $_apiKey', 'Content-Type': 'application/json'},
+      headers: {'Authorization': 'Bearer $_apiKey', 'Content-Type': 'application/json', ...header},
       onHeader: onHeader,
     );
 
@@ -92,6 +94,7 @@ class OpenAIClient extends AIClient {
     List<ChatMessage> messages, {
     List<FunctionTool>? tools,
     Map<String, dynamic>? options,
+    Map<String, String> header = const {},
     void Function(Map<String, String>)? onHeader,
   }) async* {
     // --- 1) 组织请求体 ---
@@ -105,7 +108,7 @@ class OpenAIClient extends AIClient {
     }..removeWhere((k, v) => v == null);
 
     // --- 2) 用原生 HttpClient 流式请求 ---
-    final headers = {'Authorization': 'Bearer $_apiKey', 'Content-Type': 'application/json'};
+    final headers = {'Authorization': 'Bearer $_apiKey', 'Content-Type': 'application/json', ...header};
 
     final stream = HttpService.instance.postStream('$_baseUrl/chat/completions', data: req, headers: headers, onHeader: onHeader);
 
@@ -238,6 +241,7 @@ class OpenAIClient extends AIClient {
     List<ChatMessage> messages, {
     required String model,
     int maxLength = 20,
+    Map<String, String> header = const {},
     void Function(Map<String, String>)? onHeader,
   }) async {
     // 构造用于生成标题的 prompt
@@ -253,6 +257,7 @@ class OpenAIClient extends AIClient {
           'temperature': 0.3, // 较低的温度保证结果稳定
           'max_tokens': maxLength, // 限制标题长度
         },
+        header: header,
         onHeader: onHeader,
       );
 

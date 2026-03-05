@@ -8,6 +8,7 @@ abstract class AIClient {
   Future<AIResponse> chat(
     List<ChatMessage> messages, {
     Map<String, dynamic>? options,
+    Map<String, String> header = const {},
     void Function(Map<String, dynamic>)? onHeader,
   });
 
@@ -15,6 +16,7 @@ abstract class AIClient {
     List<ChatMessage> messages, {
     List<FunctionTool>? tools,
     Map<String, dynamic>? options,
+    Map<String, String> header = const {},
     void Function(Map<String, dynamic>)? onHeader,
   });
 
@@ -22,6 +24,7 @@ abstract class AIClient {
     List<ChatMessage> messages, {
     List<FunctionTool>? tools,
     Map<String, dynamic>? options,
+    Map<String, String> header = const {},
     void Function(Map<String, dynamic>)? onHeader,
   });
 
