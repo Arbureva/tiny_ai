@@ -4,7 +4,7 @@ class ChatCompletion {
   final String id;
   final String object;
   final int? created;
-  final String model;
+  final String? model;
   final List<ChatCompletionChoice> choices;
   final Usage usage;
 

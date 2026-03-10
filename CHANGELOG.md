@@ -1,4 +1,8 @@
-## 1.0.13
+## 1.0.15
+
+- ChatCompletion 改进回调解析，不再强制要求 model
+
+## 1.0.14
 
 - ChatCompletion 改进回调解析，不再强制要求 created
 
