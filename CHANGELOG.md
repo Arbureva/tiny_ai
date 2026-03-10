@@ -1,5 +1,9 @@
 ## 1.0.13
 
+- ChatCompletion 改进回调解析，不再强制要求 created
+
+## 1.0.13
+
 - ChatManager 新增header属性，可以自由定义3
 
 ## 1.0.12
